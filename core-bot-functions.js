@@ -1,10 +1,12 @@
 var fs = require('fs');
+const {getDB} = require('./lib/dbConnect.js')
 
 var queue;
 var loggedTAs;
 
 // backs up the queue as a JSON object inside a local db.json file
 function backup(queueArray) {
+  console.log('inside backup queue');
   // write the queue array to file
   fs.writeFile('./db.json', JSON.stringify({queue: queueArray}), (err) => {
     if(err) console.log('queue backup unsuccessful');
@@ -12,6 +14,7 @@ function backup(queueArray) {
 }
 
 function backckupTAs(taArray) {
+  console.log('inside backup tas');
   // write the TA array to file
   fs.writeFile('./ta.json', JSON.stringify({loggedTAs: taArray}), (err) => {
     if(err) console.log('loggedTAs backup unsuccessful');
@@ -24,7 +27,9 @@ try {
   loggedTAs = JSON.parse(fs.readFileSync('./ta.json', 'utf8')).queue;
 } catch(e) {
   queue = [];
+  // empty student queue mongodb
   loggedTAs = [];
+  // empty ta
   backup(queue);
   backckupTAs(loggedTAs);
 }

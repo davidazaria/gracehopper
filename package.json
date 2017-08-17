@@ -19,6 +19,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.15.3",
     "https": "^1.0.0",
+    "mongodb": "^2.2.31",
     "node-slackbot": "0.0.6",
     "nodemon": "^1.11.0",
     "querystring": "^0.2.0",

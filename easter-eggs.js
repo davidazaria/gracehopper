@@ -84,6 +84,21 @@ module.exports = function(bot, taID) {
     cb(null, 'floorMessage');
   }
 
+  var leavingMessage = function(message, cb) {
+    // console.log("inside floor message TAId", taID);
+    if (validate(message) && taID.includes(message.user)) {
+      var command = paramify(message);
+      if ((command[0] === "I" || command[0] === "i") && command[1] === "am" && (command[2] === "done" || command[2] === "done!" || command[2] === "gone" || command[2] === "gone!")) {
+        bot.api("users.info", {user: message.user}, function(data) {
+          var currentTA = data.user;
+          var botMessage =  currentTA.profile.real_name + " is done with his shift!, Thank you!";
+          bot.sendMessage(message.channel, botMessage);
+        })
+      }
+    }
+    cb(null, 'leavingMessage');
+  }
+
   var favoriteThings = function(message, cb) {
     if (validate(message)) {
       let favoriteArray = ["And Shawshank Redemption, best movie ever!" ,"And burritos, Oxido and Dos Toros are the two best spots near campus!" ,"And outerspace, it is the great unknown and mankind's ultimate frontier!", "And video games, that new Zelda is dope!", "And Dippin' Dots, the ice cream of astronauts!", "And algorithms, I'm a genius in case you didn't know!", "And eqaulity, our similarities are more powerful than our differences!", "And black and white cookies, the embodiment of racial harmony in cookie form. Look to the cookie!"]
