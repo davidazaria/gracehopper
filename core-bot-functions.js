@@ -6,7 +6,7 @@ var loggedTAs;
 
 // backs up the queue as a JSON object inside a local db.json file
 function backup(queueArray) {
-  console.log('inside backup queue');
+  console.log('inside backup student queue');
   // write the queue array to file
   fs.writeFile('./db.json', JSON.stringify({queue: queueArray}), (err) => {
     if(err) console.log('queue backup unsuccessful');
@@ -14,7 +14,7 @@ function backup(queueArray) {
 }
 
 function backckupTAs(taArray) {
-  console.log('inside backup tas');
+  console.log('inside backup ta queue');
   // write the TA array to file
   fs.writeFile('./ta.json', JSON.stringify({loggedTAs: taArray}), (err) => {
     if(err) console.log('loggedTAs backup unsuccessful');
@@ -24,13 +24,18 @@ function backckupTAs(taArray) {
 // try and pick up the queue form db.json before declaring an empty queue
 try {
   queue = JSON.parse(fs.readFileSync('./db.json', 'utf8')).queue;
-  loggedTAs = JSON.parse(fs.readFileSync('./ta.json', 'utf8')).queue;
+  console.log('picking up queue ->',queue.length);
 } catch(e) {
   queue = [];
-  // empty student queue mongodb
-  loggedTAs = [];
-  // empty ta
   backup(queue);
+}
+
+// same thing for the TA queue
+try {
+  loggedTAs = JSON.parse(fs.readFileSync('./ta.json', 'utf8')).loggedTAs;
+  console.log('picking up tas ->', loggedTAs.length);
+} catch(e) {
+  loggedTAs = [];
   backckupTAs(loggedTAs);
 }
 
@@ -39,36 +44,64 @@ var prettyQueue = function() {
   var queueArray = queue.map(function(user) {
     return user.profile.real_name;
   });
-  return "Current queue is now: " + (queueArray.length ? queueArray.join(", ") : "empty");
+  return "Current queue is now: \n" + (queueArray.length ? queueArray.join(",\n") : "empty 🌑");
 };
+
+var taQueue = function() {
+  let queueArray = loggedTAs.map( ta => {
+    return ta.profile.real_name;
+  });
+  return "Current TA's available is now: \n" + (queueArray.length ? queueArray.join(",\n") : "empty 🌑");queueArray;
+}
 
 // this is the module being exported to app.js
 module.exports = function(bot, taIDs) {
 
+
   var gracehopper = function(message, cb) {
     // the if/else if statements are for commands that don't rely
     // on the wording as much
+    // paramify is useful if wording of the message is important
+    // returns the message in an array of words without the mention at the beginning
+    // function paramify(message) {
+    //   var commandString = message.text.replace(bot.mention, "").replace(/\:/g, "").toLowerCase();
+    //   var command = commandString.split(" ");
+    //   if (command[0] === "") {command.shift();}
+    //   return command;
+    // }
 
     if (message.type === "message" && message.text !== undefined && message.text.indexOf(bot.mention) > -1) {
       // State Message checks
-      var statusMessage     = message.text.indexOf("status") > -1,
-          queueMeMessage    = message.text.indexOf("queue me") > -1 || message.text.indexOf("q me") > -1,
-          removeMeMessage   = message.text.indexOf("remove me") > -1,
-          nextMessage       = message.text.indexOf("next") > -1 && taIDs.includes(message.user),
-          helpMessage       = message.text.indexOf("help") > -1,
-          clearQueueMessage = message.text.indexOf("clear queue") > -1 && taIDs.includes(message.user),
-          easterEggs        = message.text.indexOf("easter eggs" || "Easter eggs") > -1,
-          goodnight         = message.text.indexOf("goodnight") > -1;
-          // iAmHere           = message.text.indexOf("i am here" || "I am here") > -1;
+      // console.log('the start of gracehopper -> ', message.text);
+      // console.log(paramify(message));
+      var statusMessage     = message.text.match(/status/ig), // works rgx
+          queueMeMessage    = message.text.match(/(queue me)|(q me)|(qme)/ig), // works rgx
+          removeMeMessage   = message.text.match(/remove me/ig), // works rgx
+          nextMessage       = taIDs.includes(message.user) ? message.text.match(/next/ig) : undefined, // works rgx
+          helpMessage       = message.text.match(/help/ig), // works rgx
+          clearQueueMessage = taIDs.includes(message.user) ? message.text.match(/(clear queue)|(clear q)/ig) : undefined, // works rgx
+          clearTAs          = taIDs.includes(message.user) ? message.text.match(/clear tas/ig) : undefined, // works rgx
+          easterEggs        = message.text.match(/(easter eggs)/ig),
+          goodnight         = message.text.match(/(goodnight)|(good night)/ig), // works rgx
+          goodbye           = message.text.match(/goodbye/ig),
+          iAmHere           = taIDs.includes(message.user) ? message.text.match(/i am here/ig) : undefined,
+          taSchedule        = message.text.match(/(ta schedule)|(schedule)/ig); // works rgx
 
       // --> `gracehopper status`
       if (statusMessage) {
         bot.sendMessage(message.channel, prettyQueue());
+        bot.sendMessage(message.channel, taQueue());
 
       // --> `grachopper queue me`
       } else if (queueMeMessage) {
+        console.log('q me message triggered', queueMeMessage);
         // adding a user to the queue
+        // if message.user is not in the queue
         if (queue.filter(function(e) {return e.id === message.user}).length === 0) {
+          // check if they queued with a message goes here
+          console.log(`he's queueing up with a message of... `,message.text)
+
+
           bot.api("users.info", {user: message.user}, function(data) {
             queue.push(data.user);
             bot.sendMessage(message.channel, prettyQueue());
@@ -81,6 +114,7 @@ module.exports = function(bot, taIDs) {
 
       // --> `gracehopper remove me`
       } else if (removeMeMessage) {
+        console.log('remove me triggered')
         // removing a user
         var userToRemove = queue.filter(function(user) {return user.id === message.user});
         if (userToRemove.length) {
@@ -119,7 +153,15 @@ module.exports = function(bot, taIDs) {
       // --> `gracehopper help`
       } else if (helpMessage) {
         // help message
-        bot.sendMessage(message.channel, "All commands work only when you specifically mention me. Type `queue me` or `q me` to queue yourself and `status` to check current queue. Type `remove me` to remove yourself.")
+        let msg = `Gracehopper commands work only when you specifically *mention me*.
+Type the following:
+\`@gracehopper status\` - check current queue.
+\`@gracehopper queue me\` - queue yourself.
+\`@gracehopper remove me\` - remove yourself.
+*\`@gracehopper schedule\` - show TA schedule.*`
+
+
+        bot.sendMessage(message.channel, msg)
 
       // --> `gracehopper clear queue` (RESTRICTED TO TA'S)
       } else if (clearQueueMessage) {
@@ -128,7 +170,7 @@ module.exports = function(bot, taIDs) {
           let currentTA = data.user;
 
           // check if the emmiter is actually allowed to do this clear queue
-          if(taIDs.indexOf(`${currentTA.id}`) >= 0) {
+          if(taIDs.indexOf(`${currentTA.id}`) > -1) {
             queue = [];
             bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
             backup(queue);
@@ -136,8 +178,69 @@ module.exports = function(bot, taIDs) {
             bot.sendMessage(message.channel, "You are not authorized to do that");
           }
         });
+      } else if (goodbye) {
+        console.log('good bye message triggered', message);
+        bot.api("users.info", {user: message.user}, function(data) {
+          console.log('the data from the API: ', data);
+          let currentUser = data.user;
+          bot.sendMessage(message.channel, `May the force be with you, ${data.user.name}!`);
+
+
+        })
+        // if(taIDs.indexOf(`${currentTA.id}`) > -1 && loggedTAs.indexof(`${currentTA.id}`) > -1) {
+        //     // queue = [];
+        //     // bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
+        //     // backup(queue);
+        // } else {
+        //     // console.log('not a TA');
+        //     // bot.sendMessage(message.channel, "You are not authorized to do that");
+        // }
+      } else if (iAmHere) {
+        console.log('i am here message triggered', message);
+        bot.api("users.info", {user: message.user}, function(data) {
+          let currentTA = data.user;
+
+          // check if the emmiter is actually allowed to do this clear queue
+          if(taIDs.indexOf(`${currentTA.id}`) > -1) {
+            loggedTAs.push(currentTA);
+            var botMessage =  currentTA.profile.real_name + " is in the SRC, located at the back of the 4th floor. Need help? Queue up! (after you Google your question first, of course) :the-more-you-know:";
+            bot.sendMessage(message.channel, botMessage);
+            backckupTAs(loggedTAs);
+          } else {
+            bot.sendMessage(message.channel, "You are not authorized to do that");
+          }
+        });
+
+      } else if (taSchedule) {
+        // console.log('ta schedule requested', message);
+        let sched = `*TA Schedule*
+MON: 5pm-9pm
+TUE: 5pm-9pm
+WED: 12pm-3pm
+THU: 5pm-9pm
+FRI: n/a
+SAT: 12pm-3pm`;
+        bot.sendMessage(message.channel, sched);
+
+        // --> clear TA log
+      } else if (clearTAs) {
+        bot.api("users.info", {user: message.user}, function(data) {
+          let currentTA = data.user;
+
+          // check if the emmiter is actually allowed to do this clear ta queue
+          if(taIDs.indexOf(`${currentTA.id}`) > -1) {
+            loggedTAs = [];
+            backckupTAs(loggedTAs);
+            bot.sendMessage(message.channel, "NO TAs in the SRC");
+          } else {
+            bot.sendMessage(message.channel, "You are not authorized to do that");
+          }
+        });
       }
 
+
+
+      // end of options for BOT
     } else if(message.type === "hello") {
       console.log("grace hopper connected...");
     }

@@ -16,10 +16,10 @@ var botKey = process.env.BOT_KEY;
 // open slack in Chrome, inspect a conversation with Dev Tools and
 // look for data-memner-id and that will give you the ID of that user
 const Gainor              = process.env.GAINOR,
-      JasonAndrada        = process.env.JASONANDRADA,
+      // JasonAndrada        = process.env.JASONANDRADA,
       Taka                = process.env.TAKA,
       LukePate            = process.env.LUKEPATE,
-      DominicFarquadson   = process.env.DOMINICFARQUADSON,
+      // DominicFarquadson   = process.env.DOMINICFARQUADSON,
       Dov                 = process.env.DOV,
       Taj                 = process.env.TAJ,
       Kyle                = process.env.KYLE;

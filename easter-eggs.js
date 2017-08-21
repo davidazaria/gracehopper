@@ -46,6 +46,7 @@ module.exports = function(bot, taID) {
 	var trainStatus = function(message, cb) {
 		if (validate(message)) {
 			var command = paramify(message);
+      // console.log('result for paramify inside trainStatus->', command);
 			if (command[0] === "is" && command[1] === "the" && command[3] === "train" && (command[4] === "fucked" || command[4] === "fucked?")) {
 				var trainLineQuery = command[2];
 				request("http://web.mta.info/status/serviceStatus.txt", function(err, response, body) {
@@ -69,20 +70,20 @@ module.exports = function(bot, taID) {
 	};
 
   // --> `gracehopper I am here` (RESTRICTED TO TA'S)
-  var floorMessage = function(message, cb) {
-    // console.log("inside floor message TAId", taID);
-    if (validate(message) && taID.includes(message.user)) {
-      var command = paramify(message);
-      if ((command[0] === "I" || command[0] === "i") && command[1] === "am" && (command[2] === "here" || command[2] === "here!")) {
-        bot.api("users.info", {user: message.user}, function(data) {
-          var currentTA = data.user;
-          var botMessage =  currentTA.profile.real_name + " is in the SRC, located at the back of the 4th floor. Need help? Queue up! (after you Google your question first, of course) :the-more-you-know:";
-          bot.sendMessage(message.channel, botMessage);
-        })
-      }
-    }
-    cb(null, 'floorMessage');
-  }
+  // var floorMessage = function(message, cb) {
+  //   // console.log("inside floor message TAId", taID);
+  //   if (validate(message) && taID.includes(message.user)) {
+  //     var command = paramify(message);
+  //     if ((command[0] === "I" || command[0] === "i") && command[1] === "am" && (command[2] === "here" || command[2] === "here!")) {
+  //       bot.api("users.info", {user: message.user}, function(data) {
+  //         var currentTA = data.user;
+  //         var botMessage =  currentTA.profile.real_name + " is in the SRC, located at the back of the 4th floor. Need help? Queue up! (after you Google your question first, of course) :the-more-you-know:";
+  //         bot.sendMessage(message.channel, botMessage);
+  //       })
+  //     }
+  //   }
+  //   cb(null, 'floorMessage');
+  // }
 
   var leavingMessage = function(message, cb) {
     // console.log("inside floor message TAId", taID);
@@ -174,7 +175,7 @@ module.exports = function(bot, taID) {
 	const virtualDom = (message, cb) => {
 		if (validate(message)) {
 			var command = paramify(message);
-			console.log('The Virtual Dom!', command)
+			// console.log('The Virtual Dom!', command)
 			if ( (command[0] === 'Tell' || command[0] === 'tell') && command[1] === 'me' && command[2] === 'about' && command[3] === 'the' && command[4] === 'virtual' && (command[5] === 'DOM.' || command[5] === 'dom.' ) ) {
 				var botMessage =  'The Virtual Dominic Object Model is an important concept in React!'
 			}
@@ -186,7 +187,7 @@ module.exports = function(bot, taID) {
 	const heart = (message, cb) => {
 			if (validate(message)) {
 				var command = paramify(message);
-				console.log('heart!', command)
+				// console.log('heart!', command)
 			if (command[0] === 'heart' ) {
 				var botMessage =  ':heart:';
 			}
@@ -199,7 +200,7 @@ module.exports = function(bot, taID) {
 	return {
 		quoteMachine,
 		trainStatus,
-    floorMessage,
+    // floorMessage,
     favoriteThings,
     doYouLike,
     thanks,
