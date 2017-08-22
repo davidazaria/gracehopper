@@ -85,20 +85,20 @@ module.exports = function(bot, taID) {
   //   cb(null, 'floorMessage');
   // }
 
-  var leavingMessage = function(message, cb) {
-    // console.log("inside floor message TAId", taID);
-    if (validate(message) && taID.includes(message.user)) {
-      var command = paramify(message);
-      if ((command[0] === "I" || command[0] === "i") && command[1] === "am" && (command[2] === "done" || command[2] === "done!" || command[2] === "gone" || command[2] === "gone!")) {
-        bot.api("users.info", {user: message.user}, function(data) {
-          var currentTA = data.user;
-          var botMessage =  currentTA.profile.real_name + " is done with his shift!, Thank you!";
-          bot.sendMessage(message.channel, botMessage);
-        })
-      }
-    }
-    cb(null, 'leavingMessage');
-  }
+  // var leavingMessage = function(message, cb) {
+  //   // console.log("inside floor message TAId", taID);
+  //   if (validate(message) && taID.includes(message.user)) {
+  //     var command = paramify(message);
+  //     if ((command[0] === "I" || command[0] === "i") && command[1] === "am" && (command[2] === "done" || command[2] === "done!" || command[2] === "gone" || command[2] === "gone!")) {
+  //       bot.api("users.info", {user: message.user}, function(data) {
+  //         var currentTA = data.user;
+  //         var botMessage =  currentTA.profile.real_name + " is done with his shift!, Thank you!";
+  //         bot.sendMessage(message.channel, botMessage);
+  //       })
+  //     }
+  //   }
+  //   cb(null, 'leavingMessage');
+  // }
 
   var favoriteThings = function(message, cb) {
     if (validate(message)) {
