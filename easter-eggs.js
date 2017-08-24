@@ -150,16 +150,16 @@ module.exports = function(bot, taID) {
     cb(null, 'howAwesome');
   }
 
-	var wakeUp = function(message, cb) {
-		if (validate(message)) {
-			var command = paramify(message);
-			if ( (command[0] === "Grace" || command[0] === 'grace') && command[1] === "are" && command[2] === "you" && command[3] === "up?") {
-				var botMessage =  "Yea, yea... I'm up. What do you need?"
-			}
-			bot.sendMessage(message.channel, botMessage);
-		}
-		cb(null, 'wakeUp');
-	}
+	// var wakeUp = function(message, cb) {
+	// 	if (validate(message)) {
+	// 		var command = paramify(message);
+	// 		if ( (command[0] === "Grace" || command[0] === 'grace') && command[1] === "are" && command[2] === "you" && command[3] === "up?") {
+	// 			var botMessage =  "Yea, yea... I'm up. What do you need?"
+	// 		}
+	// 		bot.sendMessage(message.channel, botMessage);
+	// 	}
+	// 	cb(null, 'wakeUp');
+	// }
 
 	var theDom = function(message, cb) {
 		if (validate(message)) {
@@ -205,7 +205,7 @@ module.exports = function(bot, taID) {
     doYouLike,
     thanks,
 		howAwesome,
-		wakeUp,
+		// wakeUp,
 		theDom,
 		virtualDom,
 		heart

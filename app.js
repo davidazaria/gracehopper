@@ -34,6 +34,7 @@ var easterEggs = require('./easter-eggs')(bot, taIDs);
 
 bot.use(gracehopper);
 
+// module.exports sends everything in an object, which we will iterate on every key
 for (var key in easterEggs) {
 	bot.use(easterEggs[key]);
 }

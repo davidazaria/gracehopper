@@ -1,5 +1,17 @@
 var fs = require('fs');
 const {getDB} = require('./lib/dbConnect.js')
+const {
+  addToTAQueue,
+  addToQueue, // add user to mongodb queue
+  getQueue, // gets queue and send it in a message and prettifies it
+  getTAs,
+  clearQueue,
+  removeFromQueue,
+  clearTAQueue
+} = require('./models/queue.js');
+const MongoClient = require('mongodb').MongoClient;
+const assert = require('assert');
+const url = 'mongodb://localhost:27017/gracehopper';
 
 var queue;
 var loggedTAs;
@@ -54,6 +66,8 @@ var taQueue = function() {
   return "*Current TA's available now:* \n" + (queueArray.length ? queueArray.join(",\n") : "empty 🌑");queueArray;
 }
 
+
+
 // this is the module being exported to app.js
 module.exports = function(bot, taIDs) {
 
@@ -63,34 +77,36 @@ module.exports = function(bot, taIDs) {
     // on the wording as much
     // paramify is useful if wording of the message is important
     // returns the message in an array of words without the mention at the beginning
-    // function paramify(message) {
-    //   var commandString = message.text.replace(bot.mention, "").replace(/\:/g, "").toLowerCase();
-    //   var command = commandString.split(" ");
-    //   if (command[0] === "") {command.shift();}
-    //   return command;
-    // }
+    function paramify(message) {
+      var commandString = message.text.replace(bot.mention, "").replace(/\:/g, "").toLowerCase();
+      var command = commandString.split(" ");
+      if (command[0] === "") {command.shift();}
+      return command;
+    }
 
     if (message.type === "message" && message.text !== undefined && message.text.indexOf(bot.mention) > -1) {
       // State Message checks
-      // console.log('the start of gracehopper -> ', message.text);
-      // console.log(paramify(message));
-      var statusMessage     = message.text.match(/status/ig), // works rgx
-          queueMeMessage    = message.text.match(/(queue me)|(q me)|(qme)/ig), // works rgx
+      console.log('the start of gracehopper -> ', message.text);
+      console.log(paramify(message));
+      var statusMessage     = message.text.match(/status/ig),
+          queueMeMessage    = message.text.match(/(queue me)|(q me)|(qme)/ig),
           removeMeMessage   = message.text.match(/remove me/ig), // works rgx
-          nextMessage       = taIDs.includes(message.user) ? message.text.match(/next/ig) : undefined, // works rgx
-          helpMessage       = message.text.match(/help/ig), // works rgx
-          clearQueueMessage = taIDs.includes(message.user) ? message.text.match(/(clear queue)|(clear q)/ig) : undefined, // works rgx
-          clearTAs          = taIDs.includes(message.user) ? message.text.match(/clear tas/ig) : undefined, // works rgx
+          nextMessage       = taIDs.includes(message.user) ? message.text.match(/next/ig) : undefined,
+          helpMessage       = message.text.match(/help/ig),
+          clearQueueMessage = taIDs.includes(message.user) ? message.text.match(/(clear queue)|(clear q)/ig) : undefined,
+          clearTAs          = taIDs.includes(message.user) ? message.text.match(/clear tas/ig) : undefined,
           easterEggs        = message.text.match(/(easter eggs)/ig),
-          goodnight         = message.text.match(/(goodnight)|(good night)/ig), // works rgx
+          goodnight         = message.text.match(/(goodnight)|(good night)/ig),
           goodbye           = message.text.match(/goodbye/ig),
           iAmHere           = taIDs.includes(message.user) ? message.text.match(/i am here/ig) : undefined,
-          taSchedule        = message.text.match(/(ta schedule)|(schedule)/ig); // works rgx
-          // iAmDone           =
+          taSchedule        = message.text.match(/(ta schedule)|(schedule)/ig);
       // --> `gracehopper status`
       if (statusMessage) {
         bot.sendMessage(message.channel, prettyQueue());
         bot.sendMessage(message.channel, taQueue());
+        getQueue(bot, message);
+        getTAs(bot, message);
+
 
       // --> `grachopper queue me`
       } else if (queueMeMessage) {
@@ -105,9 +121,14 @@ module.exports = function(bot, taIDs) {
 
             bot.api("users.info", {user: message.user}, function(data) {
               queue.push(data.user);
-              bot.sendMessage(message.channel, prettyQueue());
+              addToQueue(bot, message, data.user);
+              getQueue(bot, message);
+              getTAs(bot, message);
+              // bot.sendMessage(message.channel, prettyQueue());
               // using fs to write a backup of queue on file
               backup(queue);
+              // mongoDB call
+
             });
           } else {
             bot.sendMessage(message.channel, "Already in queue. " + prettyQueue());
@@ -130,6 +151,24 @@ module.exports = function(bot, taIDs) {
         } else {
           bot.sendMessage(message.channel, `hun you not even in the queue`);
         }
+
+      // --> `gracehopper clear queue` (RESTRICTED TO TA'S)
+      } else if (clearQueueMessage) {
+        // add condition that only allows TA's to CLEAR queue
+        bot.api("users.info", {user: message.user}, function(data) {
+          let currentTA = data.user;
+
+          // check if the emmiter is actually allowed to do this clear queue
+          if(taIDs.indexOf(`${currentTA.id}`) > -1) {
+            clearQueue(bot, message, currentTA);
+            getQueue(bot, message);
+            queue = [];
+            bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
+            backup(queue);
+          } else {
+            bot.sendMessage(message.channel, "You are not authorized to do that");
+          }
+        });
 
       // --> `gracehopper next`
       } else if (nextMessage) {
@@ -168,27 +207,11 @@ Type the following:
 
         bot.sendMessage(message.channel, msg)
 
-      // --> `gracehopper clear queue` (RESTRICTED TO TA'S)
-      } else if (clearQueueMessage) {
-        // add condition that only allows TA's to CLEAR queue
-        bot.api("users.info", {user: message.user}, function(data) {
-          let currentTA = data.user;
-
-          // check if the emmiter is actually allowed to do this clear queue
-          if(taIDs.indexOf(`${currentTA.id}`) > -1) {
-            queue = [];
-            bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
-            backup(queue);
-          } else {
-            bot.sendMessage(message.channel, "You are not authorized to do that");
-          }
-        });
-
 
       } else if (goodbye) {
         // console.log('good bye message triggered', message);
         bot.api("users.info", {user: message.user}, function(data) {
-          // console.log('the data from the API: ', data);
+          console.log('the data from the API: ', data.user);
           let currentUser = data.user;
           if(taIDs.indexOf(currentUser.id) > -1 && loggedTAs.filter(function(user) {return user.id === message.user}).length > 0) {
             console.log('ta in the log too');
@@ -201,32 +224,27 @@ Type the following:
             bot.sendMessage(message.channel, `May the force be with you, ${data.user.name}!`);
           }
         })
-        // if(taIDs.indexOf(`${currentTA.id}`) > -1 && loggedTAs.indexof(`${currentTA.id}`) > -1) {
-        //     // queue = [];
-        //     // bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
-        //     // backup(queue);
-        // } else {
-        //     // console.log('not a TA');
-        //     // bot.sendMessage(message.channel, "You are not authorized to do that");
-        // }
+
       } else if (iAmHere) {
         // check if this is a TA
         if(taIDs.indexOf(`${message.user}`) > -1) {
-        // console.log('i am here message triggered this guy is a TA');
 
           // grab the data of the user
           bot.api("users.info", {user: message.user}, function(data) {
             let currentTA = data.user;
-            // console.log(data.user);
+            console.log('-->', JSON.stringify(data.user));
 
             // check if the TA is already inside the loggedTAs
             if (loggedTAs.filter(function(e) {return e.id === currentTA.id}).length === 0) {
               console.log(`ta not inside loggedTAs `);
+              addToTAQueue(bot, message, currentTA);
               loggedTAs.push(currentTA);
               backckupTAs(loggedTAs);
               var botMessage =  currentTA.profile.real_name + " is in the SRC, located at the back of the 4th floor. Need help? Queue up! (after you Google your question first, of course) :the-more-you-know:";
               bot.sendMessage(message.channel, botMessage);
               bot.sendMessage(message.channel, taQueue());
+              getQueue(bot, message);
+              getTAs(bot, message);
             } else {
               bot.sendMessage(message.channel, `already logged in ${data.user.name}`);
             }
@@ -234,21 +252,6 @@ Type the following:
         } else {
           bot.sendMessage(message.channel, "not a TA my young padawan...");
         }
-
-
-
-
-          //   loggedTAs.push(currentTA);
-          //   var botMessage =  currentTA.profile.real_name + " is in the SRC, located at the back of the 4th floor. Need help? Queue up! (after you Google your question first, of course) :the-more-you-know:";
-          //   bot.sendMessage(message.channel, botMessage);
-          //   backckupTAs(loggedTAs);
-          // } else {
-          //   bot.sendMessage(message.channel, "You are not authorized to do that");
-          // }
-
-
-        // if message.user is not in the queue
-
 
       } else if (taSchedule) {
         // console.log('ta schedule requested', message);
@@ -267,9 +270,10 @@ Type the following:
 
           // check if the emmiter is actually allowed to do this clear ta queue
           if(taIDs.indexOf(`${currentTA.id}`) > -1) {
+            clearTAQueue(bot, message, currentTA);
             loggedTAs = [];
             backckupTAs(loggedTAs);
-            bot.sendMessage(message.channel, "NO TAs in the SRC");
+            bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :rice_ball:`);
           } else {
             bot.sendMessage(message.channel, "You are not authorized to do that");
           }
