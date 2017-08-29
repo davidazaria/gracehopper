@@ -7,7 +7,8 @@ const {
   getTAs,
   clearQueue,
   removeFromQueue,
-  clearTAQueue
+  clearTAQueue,
+  getFirstStudent
 } = require('./models/queue.js');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
@@ -163,7 +164,7 @@ module.exports = function(bot, taIDs) {
             clearQueue(bot, message, currentTA);
             getQueue(bot, message);
             queue = [];
-            bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :tropical_drink:`);
+            bot.sendMessage(message.channel, `Student Queue cleared, ${currentTA.name} have a :tropical_drink:`);
             backup(queue);
           } else {
             bot.sendMessage(message.channel, "You are not authorized to do that");
@@ -273,7 +274,7 @@ Type the following:
             clearTAQueue(bot, message, currentTA);
             loggedTAs = [];
             backckupTAs(loggedTAs);
-            bot.sendMessage(message.channel, `Queue cleared, ${currentTA.name} have a :rice_ball:`);
+            bot.sendMessage(message.channel, `TA Queue cleared, ${currentTA.name} have a :rice_ball:`);
           } else {
             bot.sendMessage(message.channel, "You are not authorized to do that");
           }

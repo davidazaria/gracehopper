@@ -4,9 +4,9 @@
 // npm start
 
 require('dotenv').config({ silent: true });
-var request = require('request');
+// var request = require('request');
 var slackbot = require('./slackbot-new');
-var fs = require('fs');
+// var fs = require('fs');
 
 var botKey = process.env.BOT_KEY;
 // this botkey is related to @Taka slack existance in Students Channel.

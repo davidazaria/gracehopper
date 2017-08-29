@@ -38,6 +38,31 @@ function getQueue(bot, message) {
   })
 }
 
+const asyncGetQueue = async (bot, message) => {
+  console.log('inside getStudents mongodb');
+  // MongoClient.connect(url, function(err, db) {
+  await MongoClient.connect(url, (err, db) => {
+    assert.equal(null, err);
+    let qResult = [];
+    // console.log('passed the assert');
+    let students = db.collection('students').find();
+
+    // console.log('students ->', students);
+    students.forEach( (doc,err) => {
+      assert.equal(null, err);
+      qResult.push(doc);
+    }, function() { // for each takes to callbacks, second one runs after all items are iterated
+
+      // how do we return this stuff?
+      // if(qResult.length > 0) { // result could be empty
+      // bot.sendMessage(message.channel, prettyQueue(qResult, 'queue'));
+      // }
+      db.close();
+    });
+    return qResult;
+  }) // end of MongoClient Connection
+}
+
 function getTAs(bot, message) {
   console.log('inside getTAs');
   MongoClient.connect(url, (err, db) => {
@@ -86,6 +111,12 @@ function addToTAQueue(bot, message, taInfo) {
 
 function removeFromQueue(bot, message, studentInfo) {
   console.log('inside removefromQueue', studentInfo);
+  // for the student case of this part remove from queue is basically
+  // get the first person in the queue
+}
+
+function removeFromTAQueue(bot, message, taInfo) {
+  console.log('inside removeFromTAQueue');
 
 }
 
@@ -107,14 +138,16 @@ function clearTAQueue(bot, message, currentTA) {
   })
 }
 
-function getOneStudent(id) {
+function getFirstStudent() {
   console.log('inside getOnestudent in queue mongodb');
   MongoClient.connect(url, (err, db) => {
     // console.log('got the DB');
     let result = [];
     assert.equal(null, err);
     // console.log('passed the assert');
-    let students = db.collection('students').find({"id":`${id}`});
+    // let students = db.collection('students').find().sort({_id:1}).limit(1);
+    let students = db.collection('students').findOneAndDelete(); // when you don't specify order in find or findOne it will give natural order of insertion :)
+    // this should be later on db.collection.findOneAndDelete
     // console.log('students ->', students);
     students.forEach( (doc,err) => {
       assert.equal(null, err);
@@ -127,6 +160,7 @@ function getOneStudent(id) {
       // how do we return this stuff?
       if(result) {
         console.log('theres a result longer than 0 -> ', result)
+        bot.sendMessage(message.channel, `Up Next ->`);
         // bot.sendMessage(message.channel, result[0].name)
       }
 
@@ -135,31 +169,9 @@ function getOneStudent(id) {
 }
 
 
-
-// function clearTAQueue(bot, message) {
-//   console.log('inside clear TA queue mongodb');
-//   getDB()
-//     .then( db => {
-//       db.ta-q.delete({}, (deleteErr, res) => {
-//         if(deleteErr) {
-//           console.log('error deleting TA queue');
-//           db.close();
-//         } else {
-//           console.log('cleared all the ta queue -> ',res);
-//           db.close();
-//           return res;
-//         }
-//       })
-//     })
-//     .catch( err => {
-//       console.log('failed to connect to DB clearTAQueue');
-//     });
-// }
-
-
 module.exports = {
   removeFromQueue,
-  getOneStudent,
+  getFirstStudent,
   addToQueue,
   clearQueue,
   clearTAQueue,
