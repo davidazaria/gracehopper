@@ -82,7 +82,7 @@ module.exports = function(bot, taID) {
             ((command[0] === "איך") && (command[1] === "בין") && (command[2] === "דו")) ||
             ((command[0] === "я") && (command[1] === "здесь")) ||
             ((command[0] === "Je" || command[0] === "je") && (command[1] === "suis") && (command[2] === "la")) ||
-            ((command[0] === "Ergo" || command[0] === "ergo") && (command[1] === "adsum")) ||
+            ((command[0] === "Ego" || command[0] === "ego") && (command[1] === "adsum")) ||
             ((command[0] === "Mi" || command[0] === "mi") && (command[1] === "estas") && (command[2] === "tie") && (command[3] === "ci"))
           )
         )
