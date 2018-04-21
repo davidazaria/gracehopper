@@ -341,39 +341,6 @@ module.exports = function(bot, taID) {
     cb(null, 'heart');
   };
 
-  var bsbA = function(message, cb) {
-    if (validate(message) && taID.includes(message.user)) {
-      var command = paramify(message);
-      if ((command[0] === "Tell") && (command[1] === "me") && (command[2] === "why" || command[2] === "why!")) {
-        var botMessage = "Ain't nothin' but a heartache!"
-      }
-      bot.sendMessage(message.channel, botMessage);
-    }
-    cb(null, 'bsbA');
-  };
-
-  var bsbB = function(message, cb) {
-    if (validate(message) && taID.includes(message.user)) {
-      var command = paramify(message);
-      if ((command[0] === "TELL") && (command[1] === "ME") && (command[2] === "WHY" || command[2] === "WHY!")) {
-        var botMessage = "Ain't nothin' but a mistake!"
-      }
-      bot.sendMessage(message.channel, botMessage);
-    }
-    cb(null, 'bsbB');
-  };
-
-  var bsbC = function(message, cb) {
-    if (validate(message) && taID.includes(message.user)) {
-      var command = paramify(message);
-      if ((command[0] === "tell") && (command[1] === "me") && (command[2] === "why" || command[2] === "why")) {
-        var botMessage = "I never want to hear you say! I want it that way!"
-      }
-      bot.sendMessage(message.channel, botMessage);
-    }
-    cb(null, 'bsbC');
-  };
-
   return {
     quoteMachine,
     trainStatus,
@@ -392,9 +359,6 @@ module.exports = function(bot, taID) {
     waterBoy,
     virtualDom,
     heart,
-    bsbA,
-    bsbB,
-    bsbC,
   };
 
 }; // module.exports
